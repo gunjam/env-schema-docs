@@ -1,6 +1,6 @@
 {
   "name": "env-schema-docs",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Update environment variable docs from a JSON schema",
   "license": "MIT",
   "author": "gunjam@gmail.com",

@@ -1,14 +1,14 @@
 # env-schema-docs
 
 Command line tool to update environment variable documentation from a JSON
-schema, indented for use with the
+schema, intended for use with the
 [env-schema](https://github.com/fastify/env-schema) utility.
 
 * [Install](#install)
 * [Usage](#usage)
   * [Readmes](#readmes)
   * [Dotenv files](#dotenv-files)
-  * [Help](help)
+  * [Help](#help)
 
 ## Install
 
@@ -40,7 +40,7 @@ Updated file:
 ```
 
 The schema must be a valid JSON Schema, either as a JSON file or a JavaScript
-file that exports a JSON Schema as the default export or a name export of
+file that exports the schema as the default export, or a named export of
 "schema".
 
 The `buildTable()` function can also be used programatically:

@@ -134,6 +134,37 @@ retain any existing variable values by using the `--update` or `-u` flag:
 npx envdocs dotenv ./schema.json ./.env --update
 ```
 
+The `buildEnvFile()` function can also be used programatically:
+
+```javascript
+import { buildEnvFile } from "env-schema-docs"
+
+const schema = {
+  type: 'object',
+  required: ['PORT'],
+  properties: {
+    PORT: {
+      description: 'Port to listen on'
+      type: 'number',
+      default: 3_000
+    }
+  }
+}
+
+const dotenv = buildTable(
+  schema,          // JSON schema
+  true,            // Add comments
+  false,           // Use defaults as values
+  { PORT: 5_000 }, // Values
+)
+console.log(dotenv)
+/* output:
+# Port to listen on
+# Required. Default: 3000
+PORT=5000
+*/
+```
+
 ### Help
 
 Help can be accessed using the `help` command. For command specific help, use

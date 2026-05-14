@@ -192,7 +192,7 @@ test('dotenv errors if missing .env path', async () => {
   equal(stderr, 'Error: No dotenv file path provided\n')
 })
 
-test('dotenv errors if .env file is issing on update', async () => {
+test('dotenv errors if .env file is missing on update', async () => {
   const schemaPath = join(tmp, 'schema.json')
   const dotenvPath = join(tmp, '.env')
   await writeFile(
@@ -201,7 +201,9 @@ test('dotenv errors if .env file is issing on update', async () => {
   )
 
   const { stderr } = await exec(`node ${cliPath} dotenv ${schemaPath} ${dotenvPath} -u`)
-  equal(stderr, 'Error: Failed load to dotenv file\n')
+  equal(stderr, `Error: Failed load to dotenv file
+ENOENT: no such file or directory, open '${dotenvPath}'
+`)
 })
 
 test('dotenv errors if missing JSON schema path', async () => {
@@ -215,7 +217,9 @@ test('dotenv errors if schema is invalid', async () => {
   await writeFile(schemaPath, '"invalid"')
 
   const { stderr } = await exec(`node ${cliPath} dotenv ${schemaPath} ${dotenvPath}`)
-  equal(stderr, 'Error: Schema invalid\n')
+  equal(stderr, `Error: Schema invalid
+Cannot read properties of undefined (reading '$schema')
+`)
 })
 
 test('dotenv errors if schema is missing', async () => {
@@ -223,7 +227,7 @@ test('dotenv errors if schema is missing', async () => {
   const dotenvPath = join(tmp, '.env')
 
   const { stderr } = await exec(`node ${cliPath} dotenv ${schemaPath} ${dotenvPath}`)
-  equal(stderr, 'Error: Failed to load schema\n')
+  equal(stderr, `Error: Schema file not found at path: ${schemaPath}\n`)
 })
 
 test('readme injects table from JSON schema', async () => {
@@ -457,7 +461,9 @@ test('readme errors if schema is invalid', async () => {
   )
 
   const { stderr } = await exec(`node ${cliPath} readme ${schemaPath} ${readmePath}`)
-  equal(stderr, 'Error: Schema invalid\n')
+  equal(stderr, `Error: Schema invalid
+Cannot read properties of undefined (reading '$schema')
+`)
 })
 
 test('readme errors if schema is missing', async () => {
@@ -469,7 +475,7 @@ test('readme errors if schema is missing', async () => {
   )
 
   const { stderr } = await exec(`node ${cliPath} readme ${schemaPath} ${readmePath}`)
-  equal(stderr, 'Error: Failed to load schema\n')
+  equal(stderr, `Error: Schema file not found at path: ${schemaPath}\n`)
 })
 
 test('readme errors if readme is missing', async () => {
@@ -481,7 +487,7 @@ test('readme errors if readme is missing', async () => {
   )
 
   const { stderr } = await exec(`node ${cliPath} readme ${schemaPath} ${readmePath}`)
-  equal(stderr, 'Error: Failed to load readme\n')
+  equal(stderr, `Error: Readme file not found at ${readmePath}\n`)
 })
 
 test('readme errors if readme is missing env var comments', async () => {

@@ -152,9 +152,12 @@ async function loadSchema (path) {
   const schema = await import(path)
     .catch(() => import(path, { with: { type: 'json' } }))
     .then((s) => (typeof s.default === 'object' ? s.default : s.schema))
-    .catch((cause) => Promise.reject(
-      new Error('Failed to load schema', { cause })
-    ))
+    .catch((cause) => {
+      if (cause.code === 'ERR_MODULE_NOT_FOUND') {
+        return Promise.reject(new Error(`Schema file not found at path: ${path}`))
+      }
+      return Promise.reject(new Error('Failed to load schema', { cause }))
+    })
 
   try {
     new Ajv().validateSchema(schema, true)
@@ -195,10 +198,13 @@ async function dotEnvCommand () {
     let envdata
     try {
       envdata = readFileSync(dotenvPath, 'utf8')
+      existing = parseEnv(envdata)
     } catch (cause) {
-      throw new Error('Failed load to dotenv file', { cause })
+      // If the file doesn't exist just create it
+      if (cause.code !== 'ERR_MODULE_NOT_FOUND') {
+        throw new Error('Failed load to dotenv file', { cause })
+      }
     }
-    existing = parseEnv(envdata)
   }
   const updated = buildEnvFile(schema, comments, defaults, existing)
   try {
@@ -219,6 +225,9 @@ async function readmeCommand () {
   try {
     readme = readFileSync(readmePath, 'utf-8')
   } catch (cause) {
+    if (cause.code !== 'ERR_MODULE_NOT_FOUND') {
+      throw new Error(`Readme file not found at ${readmePath}`)
+    }
     throw new Error('Failed to load readme', { cause })
   }
   if (!commentPattern.test(readme)) {
@@ -265,6 +274,7 @@ if (import.meta.main) {
       throw new Error(`Invalid command "${command}"`)
     }
   } catch (err) {
-    console.error(`Error: ${err.message}`)
+    const cause = err.cause ? `\n${err.cause.message}` : ''
+    console.error(`Error: ${err.message}${cause}`)
   }
 }

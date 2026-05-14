@@ -69,6 +69,33 @@ ${bold('EXAMPLES')}
   $ envdocs dotenv ./schemas/env.json ./.env -u
 `
 
+/**
+ * Get abosolute path for a given file path
+ * @param {string} path File path, relative or absolute
+ * @param {string} name Type of file
+ * @returns {string} absolute file path
+ */
+function getAbsolutePath (path, type) {
+  if (!path) throw new Error(`No ${type} file path provided`)
+  return isAbsolute(path) ? path : join(process.cwd(), path)
+}
+
+/**
+ * Check if a given JSON schema object actually has any properties in it
+ * @param {object} schema A schema object
+ * @returns {boolean} true if there are properties
+ */
+function schemaHasProperties (schema) {
+  const p = schema?.properties
+  return typeof p === 'object' && p !== null && Object.keys(p).length !== 0
+}
+
+/**
+ * Build an individual table row
+ * @param {string[]} row A row of column values
+ * @param {int[]} widths A list of column widths so strings can be padded
+ * @returns {string} the rendered row
+ */
 function buildRow (row, widths) {
   let str = '|'
   for (let i = 0; i < row.length; i++) {
@@ -77,12 +104,13 @@ function buildRow (row, widths) {
   return str + '\n'
 }
 
+/**
+ * Build a table of environment variables from a JSON schema representation
+ * @param {object} envSchema The JSON schema
+ * @returns {string} the rendered table
+ */
 export function buildTable (envSchema) {
-  // No vars in schema
-  if (typeof envSchema?.properties !== 'object' ||
-    envSchema.properties === null ||
-    Object.keys(envSchema.properties).length === 0
-  ) {
+  if (!schemaHasProperties(envSchema)) {
     return ''
   }
 
@@ -115,16 +143,19 @@ export function buildTable (envSchema) {
   return table.trim()
 }
 
-export function buildEnvFile (envSchema, comments, defaults, existing) {
-  let dotEnv = ''
-
-  // No vars in schema
-  if (typeof envSchema?.properties !== 'object' ||
-    envSchema.properties === null ||
-    Object.keys(envSchema.properties).length === 0
-  ) {
-    return dotEnv
+/**
+ * Build a dotenv file of environment variables from a JSON schema
+ * @param {object} envSchema The JSON schema
+ * @param {boolean} [comments] Whether to add comments from property description
+ * @param {boolean} [defaults] Use schema default values as env var vaules
+ * @param {Record<string, string>} [values] Values to use for the env vars
+ * @returns {string} the rendered dotenv file content
+ */
+export function buildEnvFile (envSchema, comments, defaults, values) {
+  if (!schemaHasProperties(envSchema)) {
+    return ''
   }
+  let dotEnv = ''
 
   for (const [varName, varSchema] of Object.entries(envSchema.properties)) {
     if (comments) {
@@ -150,27 +181,61 @@ export function buildEnvFile (envSchema, comments, defaults, existing) {
       }
     }
     const defaultValue = defaults ? varSchema.default : undefined
-    const value = existing?.[varName] ?? defaultValue
+    const value = values?.[varName] ?? defaultValue
     dotEnv += `${varName}=${value ? JSON.stringify(value) : ''}\n`
   }
 
   return dotEnv.trim() + '\n'
 }
 
-function getAbsolutePath (path, name) {
-  if (!path) {
-    throw new Error(`No ${name} file path provided`)
+/**
+ * Load a text file from disc
+ * @param {string} path The path to the file
+ * @param {string} type The type of file it is
+ * @returns {string} the file content
+ */
+function loadFile (path, type) {
+  const absolutePath = getAbsolutePath(path, type)
+  try {
+    return readFileSync(absolutePath, 'utf-8')
+  } catch (cause) {
+    if (cause.code !== 'ERR_MODULE_NOT_FOUND') {
+      throw new Error(`${type} file not found at ${absolutePath}`)
+    }
+    throw new Error(`Failed to load ${type}`, { cause })
   }
-  return isAbsolute(path) ? path : join(process.cwd(), path)
 }
 
+/**
+ * Write a text file to disc
+ * @param {string} path The path to the file
+ * @param {string} content The file content
+ * @param {string} type The type of file it is
+ */
+function writeFile (path, content, type) {
+  const absolutePath = getAbsolutePath(path, type)
+  try {
+    writeFileSync(absolutePath, content, 'utf-8')
+  } catch (cause) /* node:coverage ignore next 2 */ {
+    throw new Error(`Failed to write to ${type} file`, { cause })
+  }
+}
+
+/**
+ * Load a JSON schema from disc, either from as a JavaScript object exported as
+ * default or named "schema", or from a JSON file.
+ * @param {string} path The path to the file
+ * @returns {Promise<object>} the JSON schema
+ */
 async function loadSchema (path) {
-  const schema = await import(path)
-    .catch(() => import(path, { with: { type: 'json' } }))
+  const absolutePath = getAbsolutePath(path, 'schema')
+  const schema = await import(absolutePath)
+    .catch(() => import(absolutePath, { with: { type: 'json' } }))
     .then((s) => (typeof s.default === 'object' ? s.default : s.schema))
     .catch((cause) => {
       if (cause.code === 'ERR_MODULE_NOT_FOUND') {
-        return Promise.reject(new Error(`Schema file not found at path: ${path}`))
+        const error = new Error(`Schema file not found at path: ${absolutePath}`)
+        return Promise.reject(error)
       }
       return Promise.reject(new Error('Failed to load schema', { cause }))
     })
@@ -184,6 +249,10 @@ async function loadSchema (path) {
   return schema
 }
 
+/**
+ * Execute the dotenv command, load the schema, build a new dotenv file and
+ * write it to disc.
+ */
 async function dotEnvCommand () {
   const { positionals, values: { comments, update, defaults } } = parseArgs({
     allowPositionals: true,
@@ -206,60 +275,36 @@ async function dotEnvCommand () {
     },
   })
 
-  const schemaPath = getAbsolutePath(positionals[1], 'schema')
-  const dotenvPath = getAbsolutePath(positionals[2], 'dotenv')
+  const [, schemaPath, dotenvPath] = positionals
   const schema = await loadSchema(schemaPath)
-  let existing = {}
-  if (update) {
-    let envdata
-    try {
-      envdata = readFileSync(dotenvPath, 'utf8')
-      existing = parseEnv(envdata)
-    } catch (cause) {
-      // If the file doesn't exist just create it
-      if (cause.code !== 'ERR_MODULE_NOT_FOUND') {
-        throw new Error('Failed load to dotenv file', { cause })
-      }
-    }
-  }
+  const existing = update ? parseEnv(loadFile(dotenvPath, 'dotenv')) : {}
   const updated = buildEnvFile(schema, comments, defaults, existing)
-  try {
-    writeFileSync(dotenvPath, updated)
-  } catch (cause) /* node:coverage ignore next 2 */ {
-    throw new Error('Failed to write changes to dotenv file', { cause })
-  }
+  writeFile(dotenvPath, updated, 'dotenv')
 }
 
+/**
+ * Execute the readme command, load the schema, build an env var table and
+ * inject it into a readme file.
+ */
 async function readmeCommand () {
   const commentPattern = /\n?<!--\s*ENV_VARS_START[\s\S]+ENV_VARS_END\s*-->\n?/
-  const { positionals } = parseArgs({ allowPositionals: true })
-  const schemaPath = getAbsolutePath(positionals[1], 'schema')
-  const readmePath = getAbsolutePath(positionals[2], 'readme')
+  const { positionals: [, schemaPath, readmePath] } = parseArgs({ allowPositionals: true })
   const schema = await loadSchema(schemaPath)
   const table = buildTable(schema)
-  let readme
-  try {
-    readme = readFileSync(readmePath, 'utf-8')
-  } catch (cause) {
-    if (cause.code !== 'ERR_MODULE_NOT_FOUND') {
-      throw new Error(`Readme file not found at ${readmePath}`)
-    }
-    throw new Error('Failed to load readme', { cause })
-  }
+  const readme = loadFile(readmePath, 'readme')
   if (!commentPattern.test(readme)) {
     throw new Error('No ENV_VARS_START and/or ENV_VARS_END comments in readme')
   }
-  try {
-    const updated = readme.replace(
-      commentPattern,
-      `\n<!-- ENV_VARS_START -->\n${table}\n<!-- ENV_VARS_END -->\n`
-    )
-    writeFileSync(readmePath, updated)
-  } catch (cause) /* node:coverage ignore next 2 */ {
-    throw new Error('Failed to write changes to readme', { cause })
-  }
+  const updated = readme.replace(
+    commentPattern,
+    `\n<!-- ENV_VARS_START -->\n${table}\n<!-- ENV_VARS_END -->\n`
+  )
+  writeFile(readmePath, updated, 'readme')
 }
 
+/**
+ * Execute the readme command, display generic or command specific help content
+ */
 function helpCommand () {
   const [, command] = parseArgs({ allowPositionals: true }).positionals
 

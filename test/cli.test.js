@@ -201,9 +201,7 @@ test('dotenv errors if .env file is missing on update', async () => {
   )
 
   const { stderr } = await exec(`node ${cliPath} dotenv ${schemaPath} ${dotenvPath} -u`)
-  equal(stderr, `Error: Failed load to dotenv file
-ENOENT: no such file or directory, open '${dotenvPath}'
-`)
+  equal(stderr, `Error: dotenv file not found at ${dotenvPath}\n`)
 })
 
 test('dotenv errors if missing JSON schema path', async () => {
@@ -487,7 +485,7 @@ test('readme errors if readme is missing', async () => {
   )
 
   const { stderr } = await exec(`node ${cliPath} readme ${schemaPath} ${readmePath}`)
-  equal(stderr, `Error: Readme file not found at ${readmePath}\n`)
+  equal(stderr, `Error: readme file not found at ${readmePath}\n`)
 })
 
 test('readme errors if readme is missing env var comments', async () => {

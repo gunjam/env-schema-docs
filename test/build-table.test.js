@@ -140,3 +140,8 @@ test('buildTable() adds multiple rows', () => {
 | VAR_2         |                    |                           | No       |`
   )
 })
+
+test('buildTable() returns empty string for empty schema', () => {
+  equal(buildTable({}), '')
+  equal(buildTable({ properties: {} }), '')
+})

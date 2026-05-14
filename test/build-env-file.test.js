@@ -163,3 +163,8 @@ test('buildEnvFile() priorities existing values over schema defaults', () => {
   const table = buildEnvFile(schema, false, true, values)
   equal(table, 'VAR_1="value"\n')
 })
+
+test('buildEnvFile() returns empty string for empty schema', () => {
+  equal(buildEnvFile({}), '')
+  equal(buildEnvFile({ properties: {} }), '')
+})

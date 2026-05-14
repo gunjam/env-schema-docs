@@ -78,6 +78,14 @@ function buildRow (row, widths) {
 }
 
 export function buildTable (envSchema) {
+  // No vars in schema
+  if (typeof envSchema?.properties !== 'object' ||
+    envSchema.properties === null ||
+    Object.keys(envSchema.properties).length === 0
+  ) {
+    return ''
+  }
+
   const rows = [['Name', 'Description', 'Default', 'Required']]
   const widths = rows[0].map((col) => col.length)
 
@@ -109,6 +117,14 @@ export function buildTable (envSchema) {
 
 export function buildEnvFile (envSchema, comments, defaults, existing) {
   let dotEnv = ''
+
+  // No vars in schema
+  if (typeof envSchema?.properties !== 'object' ||
+    envSchema.properties === null ||
+    Object.keys(envSchema.properties).length === 0
+  ) {
+    return dotEnv
+  }
 
   for (const [varName, varSchema] of Object.entries(envSchema.properties)) {
     if (comments) {

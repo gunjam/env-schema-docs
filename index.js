@@ -176,7 +176,7 @@ async function loadSchema (path) {
     })
 
   try {
-    new Ajv().validateSchema(schema, true)
+    new Ajv({ $data: true }).validateSchema(schema, true)
   } catch (err) {
     throw new Error('Schema invalid', { cause: err })
   }

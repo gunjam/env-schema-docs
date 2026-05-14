@@ -82,7 +82,7 @@ function getAbsolutePath (path, type) {
 
 /**
  * Check if a given JSON schema object actually has any properties in it
- * @param {object} schema A schema object
+ * @param {JSONSchema} schema A schema object
  * @returns {boolean} true if there are properties
  */
 function schemaHasProperties (schema) {
@@ -106,7 +106,7 @@ function buildRow (row, widths) {
 
 /**
  * Build a table of environment variables from a JSON schema representation
- * @param {object} envSchema The JSON schema
+ * @param {JSONSchema} envSchema The JSON schema
  * @returns {string} the rendered table
  */
 export function buildTable (envSchema) {
@@ -145,7 +145,7 @@ export function buildTable (envSchema) {
 
 /**
  * Build a dotenv file of environment variables from a JSON schema
- * @param {object} envSchema The JSON schema
+ * @param {JSONSchema} envSchema The JSON schema
  * @param {boolean} [comments] Whether to add comments from property description
  * @param {boolean} [defaults] Use schema default values as env var vaules
  * @param {Record<string, string>} [values] Values to use for the env vars
@@ -225,7 +225,7 @@ function writeFile (path, content, type) {
  * Load a JSON schema from disc, either from as a JavaScript object exported as
  * default or named "schema", or from a JSON file.
  * @param {string} path The path to the file
- * @returns {Promise<object>} the JSON schema
+ * @returns {Promise<JSONSchema>} the JSON schema
  */
 async function loadSchema (path) {
   const absolutePath = getAbsolutePath(path, 'schema')
@@ -339,3 +339,5 @@ if (import.meta.main) {
     console.error(`Error: ${err.message}${cause}`)
   }
 }
+
+/** @typedef {import("@types/json-schema").JSONSchema7} JSONSchema */

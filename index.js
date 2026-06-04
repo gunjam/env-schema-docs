@@ -121,7 +121,7 @@ export function buildTable (envSchema) {
     const row = [
       varName,
       varSchema.description ?? '',
-      varSchema.default ? String(varSchema.default) : '',
+      varSchema.default !== undefined ? String(varSchema.default) : '',
       envSchema.required?.includes(varName) ? 'Yes' : 'No',
     ]
 
@@ -175,14 +175,16 @@ export function buildEnvFile (envSchema, comments, defaults, values) {
         start = end
       }
 
-      if (varSchema.default || required) {
-        const d = varSchema.default ? `Default: ${varSchema.default}` : ''
+      const hasDefault = varSchema.default !== undefined
+
+      if (hasDefault || required) {
+        const d = hasDefault ? `Default: ${varSchema.default}` : ''
         dotEnv += `# ${required ? `Required${d ? '. ' : ''}` : ''}${d}\n`
       }
     }
-    const defaultValue = defaults ? varSchema.default : undefined
-    const value = values?.[varName] ?? defaultValue
-    dotEnv += `${varName}=${value ? JSON.stringify(value) : ''}\n`
+    const defaultVal = defaults ? varSchema.default : undefined
+    const value = values?.[varName] !== undefined ? values[varName] : defaultVal
+    dotEnv += `${varName}=${value !== undefined ? JSON.stringify(value) : ''}\n`
   }
 
   return dotEnv.trim() + '\n'

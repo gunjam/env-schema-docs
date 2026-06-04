@@ -44,7 +44,23 @@ test('buildTable() prints default values', () => {
     properties: {
       VAR_1: {
         type: 'string',
-        default: 'Test',
+        default: 'test'
+      },
+      VAR_2: {
+        type: 'boolean',
+        default: true
+      },
+      VAR_3: {
+        type: 'boolean',
+        default: false
+      },
+      VAR_4: {
+        type: 'number',
+        default: 100
+      },
+      VAR_5: {
+        type: 'null',
+        default: null
       },
     },
   })
@@ -54,7 +70,11 @@ test('buildTable() prints default values', () => {
     `\
 | Name  | Description | Default | Required |
 | ----- | ----------- | ------- | -------- |
-| VAR_1 |             | Test    | No       |`
+| VAR_1 |             | test    | No       |
+| VAR_2 |             | true    | No       |
+| VAR_3 |             | false   | No       |
+| VAR_4 |             | 100     | No       |
+| VAR_5 |             | null    | No       |`
   )
 })
 

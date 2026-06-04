@@ -14,9 +14,9 @@ test('buildTable() builds table for JSON schema', () => {
   equal(
     table,
     `\
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| VAR_1 |             |         | No       |`
+| Name  |
+| ----- |
+| VAR_1 |`
   )
 })
 
@@ -33,9 +33,9 @@ test('buildTable() prints descriptions', () => {
   equal(
     table,
     `\
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| VAR_1 | Description |         | No       |`
+| Name  | Description |
+| ----- | ----------- |
+| VAR_1 | Description |`
   )
 })
 
@@ -68,22 +68,47 @@ test('buildTable() prints default values', () => {
   equal(
     table,
     `\
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| VAR_1 |             | test    | No       |
-| VAR_2 |             | true    | No       |
-| VAR_3 |             | false   | No       |
-| VAR_4 |             | 100     | No       |
-| VAR_5 |             | null    | No       |`
+| Name  | Default |
+| ----- | ------- |
+| VAR_1 | test    |
+| VAR_2 | true    |
+| VAR_3 | false   |
+| VAR_4 | 100     |
+| VAR_5 | null    |`
   )
 })
 
-test("buildTable() prints 'Yes' in 'Required' column if it's a required var", () => {
+test("buildTable() prints 'Yes' and 'No' in 'Required' column for required and optional vars", () => {
   const table = buildTable({
     required: ['VAR_1'],
     properties: {
       VAR_1: {
         type: 'string',
+      },
+      VAR_2: {
+        type: 'string',
+      },
+    },
+  })
+
+  equal(
+    table,
+    `\
+| Name  | Required |
+| ----- | -------- |
+| VAR_1 | Yes      |
+| VAR_2 | No       |`
+  )
+})
+
+test('buildTable() adds all columns if at least 1 description, default and required field exist', () => {
+  const table = buildTable({
+    required: ['VAR_1'],
+    properties: {
+      VAR_1: {
+        type: 'string',
+        description: 'Description',
+        default: 'value',
       },
     },
   })
@@ -93,15 +118,18 @@ test("buildTable() prints 'Yes' in 'Required' column if it's a required var", ()
     `\
 | Name  | Description | Default | Required |
 | ----- | ----------- | ------- | -------- |
-| VAR_1 |             |         | Yes      |`
+| VAR_1 | Description | value   | Yes      |`
   )
 })
 
 test('buildTable() columns maintain minium width of header lengths', () => {
   const table = buildTable({
+    required: [],
     properties: {
       V: {
         type: 'string',
+        description: 'D',
+        default: 'd',
       },
     },
   })
@@ -111,7 +139,7 @@ test('buildTable() columns maintain minium width of header lengths', () => {
     `\
 | Name | Description | Default | Required |
 | ---- | ----------- | ------- | -------- |
-| V    |             |         | No       |`
+| V    | D           | d       | No       |`
   )
 })
 

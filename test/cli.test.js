@@ -249,9 +249,9 @@ test('readme injects table from JSON schema', async () => {
     await readFile(readmePath, 'utf-8'),
     `# Env vars
 <!-- ENV_VARS_START -->
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| VAR_1 |             |         | No       |
+| Name  |
+| ----- |
+| VAR_1 |
 <!-- ENV_VARS_END -->
 `
   )
@@ -278,9 +278,9 @@ test('readme injects table from JS schema', async () => {
     await readFile(readmePath, 'utf-8'),
     `# Env vars
 <!-- ENV_VARS_START -->
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| VAR_1 |             |         | No       |
+| Name  |
+| ----- |
+| VAR_1 |
 <!-- ENV_VARS_END -->
 `
   )
@@ -307,9 +307,9 @@ test('readme injects table from JS named export schema', async () => {
     await readFile(readmePath, 'utf-8'),
     `# Env vars
 <!-- ENV_VARS_START -->
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| VAR_1 |             |         | No       |
+| Name  |
+| ----- |
+| VAR_1 |
 <!-- ENV_VARS_END -->
 `
   )
@@ -339,9 +339,9 @@ test('readme can read and write with relative paths', async () => {
     await readFile(readmePath, 'utf-8'),
     `# Env vars
 <!-- ENV_VARS_START -->
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| VAR_1 |             |         | No       |
+| Name  |
+| ----- |
+| VAR_1 |
 <!-- ENV_VARS_END -->
 `
   )
@@ -359,9 +359,9 @@ test('readme replaces existing table', async () => {
     readmePath,
     `# Env vars
 <!-- ENV_VARS_START -->
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| OLD_1 |             |         | Yes      |
+| Name  |
+| ----- |
+| OLD_1 |
 <!-- ENV_VARS_END -->
 `
   )
@@ -371,9 +371,9 @@ test('readme replaces existing table', async () => {
     await readFile(readmePath, 'utf-8'),
     `# Env vars
 <!-- ENV_VARS_START -->
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| VAR_1 |             |         | No       |
+| Name  |
+| ----- |
+| VAR_1 |
 <!-- ENV_VARS_END -->
 `
   )
@@ -399,9 +399,9 @@ test('readme injects table when spaces between comments', async () => {
     await readFile(readmePath, 'utf-8'),
     `# Env vars
 <!-- ENV_VARS_START -->
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| VAR_1 |             |         | No       |
+| Name  |
+| ----- |
+| VAR_1 |
 <!-- ENV_VARS_END -->
 `
   )
@@ -425,9 +425,9 @@ test('readme injects table when comment is not on new line', async () => {
     await readFile(readmePath, 'utf-8'),
     `# Env vars
 <!-- ENV_VARS_START -->
-| Name  | Description | Default | Required |
-| ----- | ----------- | ------- | -------- |
-| VAR_1 |             |         | No       |
+| Name  |
+| ----- |
+| VAR_1 |
 <!-- ENV_VARS_END -->
 `
   )

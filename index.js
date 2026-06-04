@@ -70,6 +70,15 @@ ${bold('EXAMPLES')}
 `
 
 /**
+ * Return true if a value is not undefined
+ * @param {any} value
+ * @returns {boolean} true if not undefined
+ */
+function defined (value) {
+  return value !== undefined
+}
+
+/**
  * Get abosolute path for a given file path
  * @param {string} path File path, relative or absolute
  * @param {string} name Type of file
@@ -91,20 +100,6 @@ function schemaHasProperties (schema) {
 }
 
 /**
- * Build an individual table row
- * @param {string[]} row A row of column values
- * @param {int[]} widths A list of column widths so strings can be padded
- * @returns {string} the rendered row
- */
-function buildRow (row, widths) {
-  let str = '|'
-  for (let i = 0; i < row.length; i++) {
-    str += ` ${row[i].padEnd(widths[i], ' ')} |`
-  }
-  return str + '\n'
-}
-
-/**
  * Build a table of environment variables from a JSON schema representation
  * @param {JSONSchema} envSchema The JSON schema
  * @returns {string} the rendered table
@@ -113,33 +108,42 @@ export function buildTable (envSchema) {
   if (!schemaHasProperties(envSchema)) {
     return ''
   }
+  const varSchemas = Object.entries(envSchema.properties)
+  const hasDescriptions = varSchemas.some(([_, s]) => s.description)
+  const hasDefaults = varSchemas.some(([_, s]) => s.default)
+  const hasRequired = Array.isArray(envSchema.required)
 
-  const rows = [['Name', 'Description', 'Default', 'Required']]
-  const widths = rows[0].map((col) => col.length)
+  const headings = ['Name']
+  if (hasDescriptions) headings.push('Description')
+  if (hasDefaults) headings.push('Default')
+  if (hasRequired) headings.push('Required')
 
-  for (const [varName, varSchema] of Object.entries(envSchema.properties)) {
-    const row = [
-      varName,
-      varSchema.description ?? '',
-      varSchema.default !== undefined ? String(varSchema.default) : '',
-      envSchema.required?.includes(varName) ? 'Yes' : 'No',
-    ]
+  const widths = headings.map((col) => col.length)
+  const rows = [headings]
+
+  for (const [name, { description, default: defaultValue }] of varSchemas) {
+    const row = [name]
+    if (hasDescriptions) row.push(description ?? '')
+    if (hasDefaults) row.push(defined(defaultValue) ? String(defaultValue) : '')
+    if (hasRequired) row.push(envSchema.required.includes(name) ? 'Yes' : 'No')
 
     for (let i = 0; i < widths.length; i++) {
       if (row[i].length > widths[i]) widths[i] = row[i].length
     }
-
     rows.push(row)
   }
 
   const divider = widths.map((w) => '-'.repeat(w))
-  let table = buildRow(rows[0], widths)
-  table += buildRow(divider, widths)
+  rows.splice(1, 0, divider)
 
-  for (let i = 1; i < rows.length; i++) {
-    table += buildRow(rows[i], widths)
+  let table = ''
+  for (const row of rows) {
+    table += '|'
+    for (let i = 0; i < row.length; i++) {
+      table += ` ${row[i].padEnd(widths[i], ' ')} |`
+    }
+    table += '\n'
   }
-
   return table.trim()
 }
 
@@ -157,34 +161,32 @@ export function buildEnvFile (envSchema, comments, defaults, values) {
   }
   let dotEnv = ''
 
-  for (const [varName, varSchema] of Object.entries(envSchema.properties)) {
+  for (const [name, schema] of Object.entries(envSchema.properties)) {
     if (comments) {
-      const required = envSchema.required?.includes(varName)
+      const required = envSchema.required?.includes(name)
       let start = 0
       dotEnv += '\n'
 
-      while (varSchema.description?.[start]) {
+      while (schema.description?.[start]) {
         let end = start + COMMENT_LINE_LENGTH - 2
-        if (end < varSchema.description.length &&
-          varSchema.description[end] !== ' ' &&
-          varSchema.description[end + 1] !== ' ') {
-          end = varSchema.description.lastIndexOf(' ', end)
+        if (end < schema.description.length &&
+          schema.description[end] !== ' ' &&
+          schema.description[end + 1] !== ' ') {
+          end = schema.description.lastIndexOf(' ', end)
         }
-        const line = varSchema.description.slice(start, end)
+        const line = schema.description.slice(start, end)
         dotEnv += `# ${line.trim()}\n`
         start = end
       }
 
-      const hasDefault = varSchema.default !== undefined
-
-      if (hasDefault || required) {
-        const d = hasDefault ? `Default: ${varSchema.default}` : ''
+      if (defined(schema.default) || required) {
+        const d = defined(schema.default) ? `Default: ${schema.default}` : ''
         dotEnv += `# ${required ? `Required${d ? '. ' : ''}` : ''}${d}\n`
       }
     }
-    const defaultVal = defaults ? varSchema.default : undefined
-    const value = values?.[varName] !== undefined ? values[varName] : defaultVal
-    dotEnv += `${varName}=${value !== undefined ? JSON.stringify(value) : ''}\n`
+    const defaultVal = defaults ? schema.default : undefined
+    const value = defined(values?.[name]) ? values[name] : defaultVal
+    dotEnv += `${name}=${defined(value) ? JSON.stringify(value) : ''}\n`
   }
 
   return dotEnv.trim() + '\n'

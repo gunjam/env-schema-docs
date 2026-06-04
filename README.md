@@ -24,6 +24,31 @@ Run the `readme` command to inject a markdown table into a markdown file. There
 must be `<!-- ENV_VARS_START -->` and `<!-- ENV_VARS_END -->` comments in the
 file, the table will be injected between them.
 
+For the following schema:
+
+```json
+{
+  "type": "object",
+  "required": ["PORT"],
+  "properties": {
+    "PORT": {
+      "description": "Port to listen on",
+      "type": "number",
+      "default": 3000
+    }
+  }
+}
+```
+
+And the following markdown file:
+
+```markdown
+# Environment variables
+<!-- ENV_VARS_START --><!-- ENV_VARS_END -->
+```
+
+Run the `readme` command to inject the table: 
+
 ```
 npx envdocs readme ./schema.json ./README.md
 ```
@@ -66,6 +91,25 @@ console.log(table)
 | Name | Description       | Default | Required |
 | ---- | ----------------- | ------- | -------- |
 | PORT | Port to listen on | 3000    | Yes      |
+*/
+```
+
+The "Description" and "Default" columns will only be shown if there is at least
+one variable with a `description`, or `default` property, and the "Required"
+column will only be shown if the `required` property is an array.
+
+```javascript
+import { buildTable } from "env-schema-docs"
+
+const table = buildTable({
+  type: 'object',
+  properties: { PORT: { type: 'number', default: 3_000 } }
+})
+console.log(table)
+/* output:
+| Name | Default |
+| ---- | ------- |
+| PORT | 3000    |
 */
 ```
 

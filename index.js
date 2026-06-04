@@ -229,8 +229,8 @@ function writeFile (path, content, type) {
  */
 async function loadSchema (path) {
   const absolutePath = getAbsolutePath(path, 'schema')
-  const schema = await import(absolutePath)
-    .catch(() => import(absolutePath, { with: { type: 'json' } }))
+  const schema = await import(`file://${absolutePath}`)
+    .catch(() => import(`file://${absolutePath}`, { with: { type: 'json' } }))
     .then((s) => (typeof s.default === 'object' ? s.default : s.schema))
     .catch((cause) => {
       if (cause.code === 'ERR_MODULE_NOT_FOUND') {

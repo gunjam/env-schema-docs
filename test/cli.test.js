@@ -132,6 +132,75 @@ test('dotenv updates existing .env file with preserving existing values', async 
   equal(await readFile(dotenvPath, 'utf-8'), 'VAR_1="Existing"\nVAR_2=\n')
 })
 
+test('dotenv updates existing .env file with preserving existing values (short flag)', async () => {
+  const schemaPath = join(tmp, 'schema.json')
+  await writeFile(
+    schemaPath,
+    `{
+       "properties": {
+         "VAR_1": {
+           "type": "string"
+         },
+         "VAR_2": {
+           "type": "string"
+         }
+       }
+     }`
+  )
+
+  const dotenvPath = join(tmp, '.env')
+  await writeFile(dotenvPath, 'VAR_1="Existing"\n')
+
+  await exec(`node ${cliPath} dotenv ${schemaPath} ${dotenvPath} -u`)
+  equal(await readFile(dotenvPath, 'utf-8'), 'VAR_1="Existing"\nVAR_2=\n')
+})
+
+test('dotenv updates existing .env file with preserving existing values and coerces types from schema', async () => {
+  const schemaPath = join(tmp, 'schema.json')
+  await writeFile(
+    schemaPath,
+    `{
+       "properties": {
+         "VAR_1": {
+           "type": "boolean"
+         },
+         "VAR_2": {
+           "type": "string"
+         }
+       }
+     }`
+  )
+
+  const dotenvPath = join(tmp, '.env')
+  await writeFile(dotenvPath, 'VAR_1=true\n')
+
+  await exec(`node ${cliPath} dotenv ${schemaPath} ${dotenvPath} --update`)
+  equal(await readFile(dotenvPath, 'utf-8'), 'VAR_1=true\nVAR_2=\n')
+})
+
+test('dotenv updates existing .env file without writing empty existing vars back out as empty strings', async () => {
+  const schemaPath = join(tmp, 'schema.json')
+  await writeFile(
+    schemaPath,
+    `{
+       "properties": {
+         "VAR_1": {
+           "type": "string"
+         },
+         "VAR_2": {
+           "type": "string"
+         }
+       }
+     }`
+  )
+
+  const dotenvPath = join(tmp, '.env')
+  await writeFile(dotenvPath, 'VAR_1=\n')
+
+  await exec(`node ${cliPath} dotenv ${schemaPath} ${dotenvPath} --update`)
+  equal(await readFile(dotenvPath, 'utf-8'), 'VAR_1=\nVAR_2=\n')
+})
+
 test('dotenv can read and write with relative paths', async () => {
   const schemaPath = join(tmp, 'schema.json')
   await writeFile(
@@ -158,29 +227,6 @@ test('dotenv can read and write with relative paths', async () => {
   equal(await readFile(dotenvPath, 'utf-8'), 'VAR_1="Existing"\nVAR_2=\n')
 })
 
-test('dotenv updates existing .env file with preserving existing values (short flag)', async () => {
-  const schemaPath = join(tmp, 'schema.json')
-  await writeFile(
-    schemaPath,
-    `{
-       "properties": {
-         "VAR_1": {
-           "type": "string"
-         },
-         "VAR_2": {
-           "type": "string"
-         }
-       }
-     }`
-  )
-
-  const dotenvPath = join(tmp, '.env')
-  await writeFile(dotenvPath, 'VAR_1="Existing"\n')
-
-  await exec(`node ${cliPath} dotenv ${schemaPath} ${dotenvPath} -u`)
-  equal(await readFile(dotenvPath, 'utf-8'), 'VAR_1="Existing"\nVAR_2=\n')
-})
-
 test('dotenv errors if missing .env path', async () => {
   const schemaPath = join(tmp, 'schema.json')
   await writeFile(
@@ -202,6 +248,20 @@ test('dotenv errors if .env file is missing on update', async () => {
 
   const { stderr } = await exec(`node ${cliPath} dotenv ${schemaPath} ${dotenvPath} -u`)
   equal(stderr, `Error: dotenv file not found at ${dotenvPath}\n`)
+})
+
+test('dotenv errors when reading existing .env file that does not validate against the supplied schema', async () => {
+  const schemaPath = join(tmp, 'schema.json')
+  await writeFile(
+    schemaPath,
+    '{ "properties": { "VAR_1": { "type": "boolean" } } }'
+  )
+
+  const dotenvPath = join(tmp, '.env')
+  await writeFile(dotenvPath, 'VAR_1=bad\n')
+
+  const { stderr } = await exec(`node ${cliPath} dotenv ${schemaPath} ${dotenvPath} -u`)
+  equal(stderr, 'Error: Current file values do not validate agaisnt schema\n')
 })
 
 test('dotenv errors if missing JSON schema path', async () => {

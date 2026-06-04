@@ -279,7 +279,18 @@ async function dotEnvCommand () {
 
   const [, schemaPath, dotenvPath] = positionals
   const schema = await loadSchema(schemaPath)
-  const existing = update ? parseEnv(loadFile(dotenvPath, 'dotenv')) : {}
+  let existing
+  if (update) {
+    existing = parseEnv(loadFile(dotenvPath, 'dotenv'))
+    const ajv = new Ajv({ coerceTypes: true, strictTypes: false })
+    const valid = ajv.validate(schema, existing)
+    if (!valid) {
+      throw new Error('Current file values do not validate agaisnt schema')
+    }
+    for (const key of Object.keys(existing)) {
+      if (existing[key] === '') delete existing[key]
+    }
+  }
   const updated = buildEnvFile(schema, comments, defaults, existing)
   writeFile(dotenvPath, updated, 'dotenv')
 }
@@ -290,7 +301,8 @@ async function dotEnvCommand () {
  */
 async function readmeCommand () {
   const commentPattern = /\n?<!--\s*ENV_VARS_START[\s\S]+ENV_VARS_END\s*-->\n?/
-  const { positionals: [, schemaPath, readmePath] } = parseArgs({ allowPositionals: true })
+  const { positionals } = parseArgs({ allowPositionals: true })
+  const [, schemaPath, readmePath] = positionals
   const schema = await loadSchema(schemaPath)
   const table = buildTable(schema)
   const readme = loadFile(readmePath, 'readme')

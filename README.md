@@ -53,7 +53,7 @@ const schema = {
   required: ['PORT'],
   properties: {
     PORT: {
-      description: 'Port to listen on'
+      description: 'Port to listen on',
       type: 'number',
       default: 3_000
     }
@@ -83,7 +83,7 @@ For the schema:
   "required": ["PORT"],
   "properties": {
     "PORT": {
-      "description": "Port to listen on"
+      "description": "Port to listen on",
       "type": "number",
       "default": 3000
     }
@@ -144,14 +144,14 @@ const schema = {
   required: ['PORT'],
   properties: {
     PORT: {
-      description: 'Port to listen on'
+      description: 'Port to listen on',
       type: 'number',
       default: 3_000
     }
   }
 }
 
-const dotenv = buildTable(
+const dotenv = buildEnvFile(
   schema,          // JSON schema
   true,            // Add comments
   false,           // Use defaults as values
